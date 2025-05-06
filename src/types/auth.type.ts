@@ -1,4 +1,10 @@
-import { TUser } from './user.type'
-import { TSuccessResponseApi } from './utils.type'
+export type TLoginPayload = { username: string; password: string }
 
-export type TAuthResponse = TSuccessResponseApi<{ access_token: string; expires: string; user: TUser }>
+export type TLoginResponse = { accessToken: string }
+
+export type TUser = {
+  username: string
+  email: string
+  firstName: string
+  lastName: string
+}

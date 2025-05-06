@@ -1,9 +1,6 @@
-import { TAuthResponse } from '@/types/auth.type'
+import { TLoginPayload, TLoginResponse, TUser } from '@/types/auth.type'
 import http from '@/utils/http'
 
-export const registerAccount = (body: { email: string; password: string }) =>
-  http.post<TAuthResponse>('/register', body)
+export const login = (body: TLoginPayload) => http.post<TLoginResponse>('/auth/login', body)
 
-export const login = (body: { email: string; password: string }) => http.post<TAuthResponse>('/login', body)
-
-export const logout = () => http.post('/logout')
+export const getMe = () => http.get<TUser>('/auth/me')

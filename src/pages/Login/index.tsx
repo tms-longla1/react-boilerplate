@@ -1,19 +1,17 @@
 import { login } from '@/apis/auth.api'
 import { Input } from '@/components/shared'
-import { AppContext } from '@/contexts/app.context'
-import { TErrorResponseApi } from '@/types/utils.type'
+import { setAccessTokenToLocalStorage } from '@/utils/localStorage'
 import { TAuthSchema, authSchema } from '@/utils/rules'
-import { isAxiosUnprocessableEntityError } from '@/utils/utils'
 import { yupResolver } from '@hookform/resolvers/yup'
-import { useMutation } from '@tanstack/react-query'
-import { useContext } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { AxiosError } from 'axios'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 export default function Login() {
   const { t } = useTranslation()
-  const { setIsAuthenticated } = useContext(AppContext)
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const {
     register,
@@ -21,7 +19,11 @@ export default function Login() {
     setError,
     formState: { errors }
   } = useForm<TAuthSchema>({
-    resolver: yupResolver(authSchema)
+    resolver: yupResolver(authSchema),
+    defaultValues: {
+      username: 'emilys',
+      password: 'emilyspass'
+    }
   })
 
   const loginMutation = useMutation({
@@ -30,42 +32,39 @@ export default function Login() {
 
   const onSubmit = handleSubmit((data) => {
     loginMutation.mutate(data, {
-      onSuccess: () => {
-        setIsAuthenticated(true)
+      onSuccess: (response) => {
+        response.data.accessToken && setAccessTokenToLocalStorage(response.data.accessToken)
+        queryClient.invalidateQueries({ queryKey: ['me'] })
         navigate('/')
       },
       onError: (error) => {
-        if (isAxiosUnprocessableEntityError<TErrorResponseApi<TAuthSchema>>(error)) {
-          const responseError = error.response?.data.data
-          if (responseError) {
-            setError('password', {
-              message: responseError.email,
-              type: 'server'
-            })
-          }
-        }
+        const errorMessage = (error as AxiosError).message
+        setError('password', {
+          message: errorMessage,
+          type: 'server'
+        })
       }
     })
   })
 
   return (
-    <div className="flex flex-col justify-center items-center pt-14">
+    <div className="flex flex-col items-center justify-center pt-14">
       <div className="w-[428px]">
         <div className="mb-10">
-          <div className="text-4xl text-center mb-6">{t('login')}</div>
-          <div className="text-lg text-justify px-4">
+          <div className="mb-6 text-center text-4xl">{t('login')}</div>
+          <div className="px-4 text-justify text-lg">
             {`Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's
           standard dummy text ever since the 1500s`}
           </div>
         </div>
-        <form className="p-10 rounded-md shadow" onSubmit={onSubmit} noValidate>
+        <form className="rounded-md p-10 shadow" onSubmit={onSubmit} noValidate>
           <Input
-            type="email"
-            name="email"
+            type="text"
+            name="username"
             register={register}
             className="mb-1"
-            errorMessage={errors.email?.message}
-            placeholder={t('email')}
+            errorMessage={errors.username?.message}
+            placeholder={t('username')}
           />
           <Input
             type="password"
@@ -76,10 +75,9 @@ export default function Login() {
             placeholder={t('password')}
           />
           <div>
-            <button className="w-full bg-primary text-white text-center py-3 px-2 rounded-sm">{t('login')}</button>
+            <button className="bg-primary w-full rounded-sm px-2 py-3 text-center text-white">{t('login')}</button>
           </div>
         </form>
-        <div></div>
       </div>
     </div>
   )

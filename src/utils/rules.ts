@@ -1,12 +1,13 @@
+import { t } from 'i18next'
 import * as yup from 'yup'
 
 export const authSchema = yup.object({
-  email: yup.string().required('Email là bắt buộc').email('Email không đúng định dạng'),
+  username: yup.string().required(t('username_required')),
   password: yup
     .string()
-    .required('Password là bắt buộc')
-    .min(6, 'Độ dài từ 6 - 160 kí tự')
-    .max(160, 'Độ dài từ 6 - 160 kí tự')
+    .required(t('password_required'))
+    .min(6, t('password_min_length'))
+    .max(160, t('password_max_length'))
 })
 
 export type TAuthSchema = yup.InferType<typeof authSchema>
